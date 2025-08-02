@@ -1,0 +1,19 @@
+DND Character Maker - Requirements/Outline
+language: python
+platforms: MacOS, Windows
+main purpose: Cataloging character information for viewing and editing multiple DND 5th edition character.
+
+required features:
+  -simple command line gui
+  -all character information stored in labeled JSON list, labeled by character name
+  -character information includes all values from the character sheet included in references
+  -record spells and allow quick adding of spells to character, keeping track of number of spells prepared etc
+  -ability to add custom abilities and spells
+  -no equipment, inventory is a separate program
+  -allow to create and switch between multiple characters
+  -menu with quick access to proficiency bonus, ac, speed, etc asa reference sheet for combat
+
+  
+
+
+
