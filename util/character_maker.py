@@ -7,7 +7,181 @@ A command-line tool for creating and managing D&D 5th edition characters.
 import json
 import os
 import sys
-from typing import Dict, List, Optional, Any
+import random
+from typing import Dict, List, Optional, Any, Tuple
+
+# D&D 5E Class Data
+DND_CLASSES = {
+    "Artificer": {
+        "hit_die": 8,
+        "primary_ability": ["Intelligence"],
+        "saving_throws": ["Constitution", "Intelligence"],
+        "subclasses": {
+            "Alchemist": "Support through elixirs and healing",
+            "Armorer": "Heavy armor and defensive capabilities",
+            "Artillerist": "Ranged damage and battlefield control",
+            "Battle Smith": "Combat pet and versatile fighting"
+        }
+    },
+    "Barbarian": {
+        "hit_die": 12,
+        "primary_ability": ["Strength"],
+        "saving_throws": ["Strength", "Constitution"],
+        "subclasses": {
+            "Path of the Berserker": "Frenzied rage and brutal attacks",
+            "Path of the Totem Warrior": "Animal spirit guidance",
+            "Path of the Ancestral Guardian": "Spiritual protection",
+            "Path of the Storm Herald": "Elemental aura effects",
+            "Path of the Zealot": "Divine rage and resurrection resistance"
+        }
+    },
+    "Bard": {
+        "hit_die": 8,
+        "primary_ability": ["Charisma"],
+        "saving_throws": ["Dexterity", "Charisma"],
+        "subclasses": {
+            "College of Lore": "Additional magical secrets and skills",
+            "College of Valor": "Combat prowess and inspiration",
+            "College of Glamour": "Fey magic and charm",
+            "College of Whispers": "Secrets and psychological manipulation",
+            "College of Swords": "Blade dancing and flourishes"
+        }
+    },
+    "Cleric": {
+        "hit_die": 8,
+        "primary_ability": ["Wisdom"],
+        "saving_throws": ["Wisdom", "Charisma"],
+        "subclasses": {
+            "Life Domain": "Healing and support magic",
+            "Light Domain": "Radiant damage and illumination",
+            "War Domain": "Combat blessing and weapon mastery",
+            "Tempest Domain": "Lightning and thunder magic",
+            "Nature Domain": "Plant and animal communion",
+            "Trickery Domain": "Stealth and illusion magic",
+            "Knowledge Domain": "Information and divination",
+            "Death Domain": "Necromantic power"
+        }
+    },
+    "Druid": {
+        "hit_die": 8,
+        "primary_ability": ["Wisdom"],
+        "saving_throws": ["Intelligence", "Wisdom"],
+        "subclasses": {
+            "Circle of the Land": "Additional spells and spell recovery",
+            "Circle of the Moon": "Enhanced wild shape abilities",
+            "Circle of Dreams": "Healing and teleportation",
+            "Circle of the Shepherd": "Beast summoning and support",
+            "Circle of Spores": "Necromantic nature magic"
+        }
+    },
+    "Fighter": {
+        "hit_die": 10,
+        "primary_ability": ["Strength", "Dexterity"],
+        "saving_throws": ["Strength", "Constitution"],
+        "subclasses": {
+            "Champion": "Improved critical hits and survivability",
+            "Battle Master": "Combat maneuvers and tactics",
+            "Eldritch Knight": "Weapon and spell combination",
+            "Arcane Archer": "Magical arrow effects",
+            "Cavalier": "Mounted combat and protection",
+            "Samurai": "Fighting spirit and social skills"
+        }
+    },
+    "Monk": {
+        "hit_die": 8,
+        "primary_ability": ["Dexterity", "Wisdom"],
+        "saving_throws": ["Strength", "Dexterity"],
+        "subclasses": {
+            "Way of the Open Hand": "Enhanced unarmed combat",
+            "Way of Shadow": "Stealth and shadow magic",
+            "Way of the Four Elements": "Elemental ki manipulation",
+            "Way of the Long Death": "Life force manipulation",
+            "Way of the Sun Soul": "Radiant energy projection",
+            "Way of the Drunken Master": "Unpredictable fighting style"
+        }
+    },
+    "Paladin": {
+        "hit_die": 10,
+        "primary_ability": ["Strength", "Charisma"],
+        "saving_throws": ["Wisdom", "Charisma"],
+        "subclasses": {
+            "Oath of Devotion": "Classic holy warrior",
+            "Oath of the Ancients": "Nature and fey protection",
+            "Oath of Vengeance": "Relentless pursuit of justice",
+            "Oath of Conquest": "Fear and domination",
+            "Oath of Redemption": "Peace and rehabilitation",
+            "Oathbreaker": "Fallen paladin with dark powers"
+        }
+    },
+    "Ranger": {
+        "hit_die": 10,
+        "primary_ability": ["Dexterity", "Wisdom"],
+        "saving_throws": ["Strength", "Dexterity"],
+        "subclasses": {
+            "Hunter": "Specialized monster hunting",
+            "Beast Master": "Animal companion",
+            "Gloom Stalker": "Darkvision and ambush tactics",
+            "Horizon Walker": "Planar travel and detection",
+            "Monster Slayer": "Anti-magic and creature knowledge",
+            "Fey Wanderer": "Fey magic and charm resistance"
+        }
+    },
+    "Rogue": {
+        "hit_die": 8,
+        "primary_ability": ["Dexterity"],
+        "saving_throws": ["Dexterity", "Intelligence"],
+        "subclasses": {
+            "Thief": "Enhanced climbing and item use",
+            "Assassin": "Disguise and poison expertise",
+            "Arcane Trickster": "Magic and illusion",
+            "Mastermind": "Social manipulation and help actions",
+            "Swashbuckler": "Charismatic dueling",
+            "Scout": "Mobility and survival skills",
+            "Inquisitive": "Investigation and insight"
+        }
+    },
+    "Sorcerer": {
+        "hit_die": 6,
+        "primary_ability": ["Charisma"],
+        "saving_throws": ["Constitution", "Charisma"],
+        "subclasses": {
+            "Draconic Bloodline": "Dragon heritage and resilience",
+            "Wild Magic": "Unpredictable magical surges",
+            "Storm Sorcery": "Wind and lightning control",
+            "Divine Soul": "Divine and arcane magic combination",
+            "Shadow Magic": "Darkness and shadow manipulation",
+            "Aberrant Mind": "Telepathic and alien magic"
+        }
+    },
+    "Warlock": {
+        "hit_die": 8,
+        "primary_ability": ["Charisma"],
+        "saving_throws": ["Wisdom", "Charisma"],
+        "subclasses": {
+            "The Fiend": "Infernal patron with fire resistance",
+            "The Archfey": "Fey patron with charm abilities",
+            "The Great Old One": "Cosmic horror patron with telepathy",
+            "The Celestial": "Divine patron with healing abilities",
+            "The Hexblade": "Sentient weapon patron",
+            "The Genie": "Elemental patron with utility magic"
+        }
+    },
+    "Wizard": {
+        "hit_die": 6,
+        "primary_ability": ["Intelligence"],
+        "saving_throws": ["Intelligence", "Wisdom"],
+        "subclasses": {
+            "School of Abjuration": "Protective and dispelling magic",
+            "School of Conjuration": "Summoning and teleportation",
+            "School of Divination": "Future sight and information",
+            "School of Enchantment": "Mind control and charm",
+            "School of Evocation": "Damage and energy manipulation",
+            "School of Illusion": "Deception and misdirection",
+            "School of Necromancy": "Death and undeath magic",
+            "School of Transmutation": "Change and transformation"
+        }
+    }
+}
 
 class Character:
     """Represents a D&D 5E character with all relevant stats and information."""
@@ -17,7 +191,9 @@ class Character:
         
         # Basic Character Info
         self.character_name = name
-        self.class_level = ""
+        self.character_class = ""
+        self.subclass = ""
+        self.level = 1
         self.background = ""
         self.player_name = ""
         self.race = ""
@@ -251,9 +427,12 @@ class CharacterMakerCLI:
         # Basic information
         character.player_name = input("Player name (optional): ").strip()
         character.race = input("Race: ").strip()
-        character.class_level = input("Class and level (e.g., 'Fighter 1'): ").strip()
         character.background = input("Background: ").strip()
         character.alignment = input("Alignment: ").strip()
+        
+        # Class and level selection
+        self.select_class_and_subclass(character)
+        self.select_level(character)
         
         # Set ability scores
         self.set_ability_scores(character)
@@ -267,8 +446,15 @@ class CharacterMakerCLI:
         # Set combat stats
         self.set_combat_stats(character)
         
+        # Generate hit points
+        self.generate_hit_points(character)
+        
+        # Apply class benefits
+        self.apply_class_benefits(character)
+        
         # Spellcasting setup (if applicable)
-        if input("\nIs this character a spellcaster? (y/n): ").lower().startswith('y'):
+        if self.is_spellcaster_class(character.character_class):
+            print(f"\n{character.character_class} is a spellcasting class. Setting up spellcasting...")
             self.setup_spellcasting(character)
         
         self.manager.add_character(character)
@@ -310,7 +496,8 @@ class CharacterMakerCLI:
         print("\n--- ALL CHARACTERS ---")
         for name in characters:
             char = self.manager.get_character(name)
-            print(f"• {name} - {char.race} {char.class_level}")
+            class_info = f"{char.character_class} {char.level}" if hasattr(char, 'character_class') and hasattr(char, 'level') else getattr(char, 'class_level', 'Unknown')
+            print(f"• {name} - {char.race} {class_info}")
     
     def delete_character(self):
         """Delete a character."""
@@ -400,10 +587,13 @@ class CharacterMakerCLI:
         if new_race:
             char.race = new_race
         
-        new_class = input(f"Class and level [{char.class_level}]: ").strip()
-        if new_class:
-            char.class_level = new_class
-            # Recalculate level-based stats
+        # Handle both old and new character format
+        current_class_info = f"{char.character_class} {char.level}" if hasattr(char, 'character_class') and hasattr(char, 'level') else getattr(char, 'class_level', '')
+        
+        print(f"Current class: {current_class_info}")
+        if input("Change class? (y/n): ").lower().startswith('y'):
+            self.select_class_and_subclass(char)
+            self.select_level(char)
             self.recalculate_level_stats(char)
         
         new_background = input(f"Background [{char.background}]: ").strip()
@@ -647,7 +837,9 @@ class CharacterMakerCLI:
         print(f"CHARACTER SHEET: {char.name}")
         print(f"{'='*60}")
         print(f"Player: {char.player_name}")
-        print(f"Race: {char.race} | Class: {char.class_level}")
+        class_info = f"{char.character_class} {char.level}" if hasattr(char, 'character_class') and hasattr(char, 'level') else getattr(char, 'class_level', 'Unknown')
+        subclass_info = f" ({char.subclass})" if hasattr(char, 'subclass') and char.subclass else ""
+        print(f"Race: {char.race} | Class: {class_info}{subclass_info}")
         print(f"Background: {char.background} | Alignment: {char.alignment}")
         print(f"Experience: {char.experience_points}")
         
@@ -719,9 +911,10 @@ class CharacterMakerCLI:
     
     def recalculate_level_stats(self, character: Character):
         """Recalculate level-dependent stats when level changes."""
-        import re
-        level = 1
-        if character.class_level:
+        # Get level from new format or old format
+        level = getattr(character, 'level', 1)
+        if level == 1 and hasattr(character, 'class_level') and character.class_level:
+            import re
             level_match = re.search(r'(\d+)', character.class_level)
             if level_match:
                 level = int(level_match.group(1))
@@ -729,7 +922,7 @@ class CharacterMakerCLI:
         character.proficiency_bonus = 2 + ((level - 1) // 4)
         character.initiative = character.get_ability_modifier(character.dexterity)
         
-        if character.spellcasting_ability:
+        if hasattr(character, 'spellcasting_ability') and character.spellcasting_ability:
             self.recalculate_spell_stats(character)
     
     def recalculate_spell_stats(self, character: Character):
@@ -1117,38 +1310,19 @@ class CharacterMakerCLI:
         """Calculate stats based on character level."""
         print("\n--- CALCULATING LEVEL-BASED STATS ---")
         
-        # Extract level from class_level string
-        level = 1
-        if character.class_level:
-            import re
-            level_match = re.search(r'(\d+)', character.class_level)
-            if level_match:
-                level = int(level_match.group(1))
+        # Get level (should already be set by select_level)
+        level = getattr(character, 'level', 1)
         
         # Calculate proficiency bonus
         character.proficiency_bonus = 2 + ((level - 1) // 4)
         
-        # Set hit points
-        while True:
-            try:
-                hp_input = input(f"Hit points (default based on level {level}): ").strip()
-                if hp_input:
-                    character.hit_point_maximum = int(hp_input)
-                    character.current_hit_points = character.hit_point_maximum
-                    break
-                else:
-                    # Default HP calculation: max at 1st level + avg for subsequent levels
-                    base_hp = 8 + character.get_ability_modifier(character.constitution)  # Assuming d8 hit die
-                    if level > 1:
-                        base_hp += (level - 1) * (5 + character.get_ability_modifier(character.constitution))
-                    character.hit_point_maximum = max(1, base_hp)
-                    character.current_hit_points = character.hit_point_maximum
-                    break
-            except ValueError:
-                print("Please enter a valid number.")
-        
         print(f"Proficiency bonus: +{character.proficiency_bonus}")
-        print(f"Hit points: {character.hit_point_maximum}")
+        
+        # Hit dice will be set based on character class during HP generation
+        if hasattr(character, 'character_class') and character.character_class in DND_CLASSES:
+            hit_die = DND_CLASSES[character.character_class]["hit_die"]
+            character.hit_dice = f"{level}d{hit_die}"
+            print(f"Hit dice: {character.hit_dice}")
     
     def set_proficiencies(self, character: Character):
         """Set character proficiencies."""
@@ -1258,6 +1432,241 @@ class CharacterMakerCLI:
         
         print(f"Spell save DC: {character.spell_save_dc}")
         print(f"Spell attack bonus: +{character.spell_attack_bonus}")
+    
+    def select_class_and_subclass(self, character: Character):
+        """Select character class and subclass."""
+        print("\n--- CLASS SELECTION ---")
+        print("Choose your character class:")
+        
+        classes = list(DND_CLASSES.keys())
+        for i, class_name in enumerate(classes, 1):
+            class_data = DND_CLASSES[class_name]
+            primary_abilities = "/".join(class_data["primary_ability"])
+            print(f"{i:2d}. {class_name} (HD: d{class_data['hit_die']}, Primary: {primary_abilities})")
+        
+        while True:
+            try:
+                choice = int(input(f"\nSelect class (1-{len(classes)}): ")) - 1
+                if 0 <= choice < len(classes):
+                    selected_class = classes[choice]
+                    character.character_class = selected_class
+                    
+                    # Show class details
+                    class_data = DND_CLASSES[selected_class]
+                    print(f"\n--- {selected_class.upper()} ---")
+                    print(f"Hit Die: d{class_data['hit_die']}")
+                    print(f"Primary Ability: {', '.join(class_data['primary_ability'])}")
+                    print(f"Saving Throw Proficiencies: {', '.join(class_data['saving_throws'])}")
+                    
+                    # Apply saving throw proficiencies
+                    for save in class_data["saving_throws"]:
+                        character.saving_throws[save.lower()] = True
+                    
+                    break
+                else:
+                    print("Invalid selection. Please try again.")
+            except ValueError:
+                print("Please enter a valid number.")
+        
+        # Subclass selection
+        self.select_subclass(character)
+    
+    def select_subclass(self, character: Character):
+        """Select character subclass."""
+        class_data = DND_CLASSES[character.character_class]
+        subclasses = list(class_data["subclasses"].items())
+        
+        print(f"\n--- {character.character_class.upper()} SUBCLASSES ---")
+        for i, (subclass_name, description) in enumerate(subclasses, 1):
+            print(f"{i:2d}. {subclass_name}")
+            print(f"     {description}")
+        
+        while True:
+            try:
+                choice = int(input(f"\nSelect subclass (1-{len(subclasses)}): ")) - 1
+                if 0 <= choice < len(subclasses):
+                    character.subclass = subclasses[choice][0]
+                    print(f"\nSelected: {character.subclass}")
+                    break
+                else:
+                    print("Invalid selection. Please try again.")
+            except ValueError:
+                print("Please enter a valid number.")
+    
+    def select_level(self, character: Character):
+        """Select character level."""
+        print("\n--- LEVEL SELECTION ---")
+        
+        while True:
+            try:
+                level = int(input("Enter character level (1-20): "))
+                if 1 <= level <= 20:
+                    character.level = level
+                    print(f"Level set to: {level}")
+                    break
+                else:
+                    print("Level must be between 1 and 20.")
+            except ValueError:
+                print("Please enter a valid number.")
+    
+    def generate_hit_points(self, character: Character):
+        """Generate hit points with option for random or manual entry."""
+        print("\n--- HIT POINTS ---")
+        class_data = DND_CLASSES[character.character_class]
+        hit_die = class_data["hit_die"]
+        con_mod = character.get_ability_modifier(character.constitution)
+        
+        # Calculate HP options
+        max_hp = hit_die + con_mod + (character.level - 1) * (hit_die + con_mod)
+        avg_hp = hit_die + con_mod + (character.level - 1) * (int(hit_die/2) + 1 + con_mod)
+        
+        print(f"Class: {character.character_class} (d{hit_die} hit die)")
+        print(f"Constitution Modifier: {con_mod:+d}")
+        print(f"Level: {character.level}")
+        
+        print(f"\nHP Calculation Options:")
+        print(f"1. Maximum HP: {max_hp}")
+        print(f"2. Average HP: {avg_hp}")
+        print(f"3. Roll for HP (random)")
+        print(f"4. Enter custom HP")
+        
+        while True:
+            choice = input("\nSelect HP method (1-4): ").strip()
+            
+            if choice == "1":
+                character.hit_point_maximum = max_hp
+                character.current_hit_points = max_hp
+                print(f"HP set to maximum: {max_hp}")
+                break
+            elif choice == "2":
+                character.hit_point_maximum = avg_hp
+                character.current_hit_points = avg_hp
+                print(f"HP set to average: {avg_hp}")
+                break
+            elif choice == "3":
+                rolled_hp = self.roll_hit_points(character, hit_die, con_mod)
+                character.hit_point_maximum = rolled_hp
+                character.current_hit_points = rolled_hp
+                print(f"Rolled HP: {rolled_hp}")
+                break
+            elif choice == "4":
+                while True:
+                    try:
+                        custom_hp = int(input("Enter custom HP: "))
+                        if custom_hp > 0:
+                            character.hit_point_maximum = custom_hp
+                            character.current_hit_points = custom_hp
+                            print(f"HP set to: {custom_hp}")
+                            return
+                        else:
+                            print("HP must be positive.")
+                    except ValueError:
+                        print("Please enter a valid number.")
+            else:
+                print("Invalid choice. Please select 1-4.")
+    
+    def roll_hit_points(self, character: Character, hit_die: int, con_mod: int) -> int:
+        """Roll hit points for each level."""
+        total_hp = hit_die + con_mod  # Max HP at 1st level
+        
+        if character.level > 1:
+            print(f"\nRolling HP for levels 2-{character.level}:")
+            for level in range(2, character.level + 1):
+                roll = random.randint(1, hit_die)
+                level_hp = roll + con_mod
+                total_hp += level_hp
+                print(f"  Level {level}: d{hit_die} = {roll} + {con_mod} = {level_hp}")
+        
+        return total_hp
+    
+    def apply_class_benefits(self, character: Character):
+        """Apply class-specific benefits and features."""
+        class_name = character.character_class
+        level = character.level
+        
+        # Add basic class features
+        features = []
+        
+        # Universal features
+        if class_name == "Barbarian":
+            features.extend(["Rage", "Unarmored Defense"])
+            if level >= 2:
+                features.append("Reckless Attack")
+                features.append("Danger Sense")
+        elif class_name == "Bard":
+            features.extend(["Bardic Inspiration", "Spellcasting"])
+            if level >= 2:
+                features.append("Jack of All Trades")
+                features.append("Song of Rest")
+        elif class_name == "Cleric":
+            features.extend(["Spellcasting", "Divine Domain"])
+            if level >= 2:
+                features.append("Channel Divinity")
+        elif class_name == "Druid":
+            features.extend(["Druidcraft", "Spellcasting"])
+            if level >= 2:
+                features.append("Wild Shape")
+                features.append("Druid Circle")
+        elif class_name == "Fighter":
+            features.extend(["Fighting Style", "Second Wind"])
+            if level >= 2:
+                features.append("Action Surge")
+        elif class_name == "Monk":
+            features.extend(["Unarmored Defense", "Martial Arts"])
+            if level >= 2:
+                features.append("Ki")
+                features.append("Unarmored Movement")
+        elif class_name == "Paladin":
+            features.extend(["Divine Sense", "Lay on Hands"])
+            if level >= 2:
+                features.append("Fighting Style")
+                features.append("Spellcasting")
+                features.append("Divine Smite")
+        elif class_name == "Ranger":
+            features.extend(["Favored Enemy", "Natural Explorer"])
+            if level >= 2:
+                features.append("Fighting Style")
+                features.append("Spellcasting")
+        elif class_name == "Rogue":
+            features.extend(["Expertise", "Sneak Attack", "Thieves' Cant"])
+            if level >= 2:
+                features.append("Cunning Action")
+        elif class_name == "Sorcerer":
+            features.extend(["Spellcasting", "Sorcerous Origin"])
+            if level >= 2:
+                features.append("Font of Magic")
+        elif class_name == "Warlock":
+            features.extend(["Otherworldly Patron", "Pact Magic"])
+            if level >= 2:
+                features.append("Eldritch Invocations")
+        elif class_name == "Wizard":
+            features.extend(["Spellcasting", "Arcane Recovery"])
+            if level >= 2:
+                features.append("Arcane Tradition")
+        elif class_name == "Artificer":
+            features.extend(["Magical Tinkering", "Spellcasting"])
+            if level >= 2:
+                features.append("Infuse Item")
+        
+        # Add subclass feature
+        features.append(f"{character.subclass} features")
+        
+        # Add to character (avoid duplicates)
+        for feature in features:
+            if feature not in character.features_and_traits:
+                character.features_and_traits.append(feature)
+        
+        print(f"\nApplied {class_name} features:")
+        for feature in features:
+            print(f"  • {feature}")
+    
+    def is_spellcaster_class(self, class_name: str) -> bool:
+        """Check if a class is a spellcaster."""
+        spellcaster_classes = [
+            "Artificer", "Bard", "Cleric", "Druid", "Paladin", 
+            "Ranger", "Sorcerer", "Warlock", "Wizard"
+        ]
+        return class_name in spellcaster_classes
 
 
 def main():
