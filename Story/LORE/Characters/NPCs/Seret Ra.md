@@ -1,1 +1,0 @@
-“The Morningstar”: Alcohol and ecstacy. 

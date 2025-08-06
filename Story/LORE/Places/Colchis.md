@@ -1,1 +1,0 @@
-The first territory established by [[Medena]] after the cleave in the first era, when the Living Amethyst was formed and she traveled from her home to find it. Was lost during the Slave Rebellion in the first era and then recovered by Medena during the fall of the empire at the end of the second era and the Cameron Dynasty.

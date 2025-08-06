@@ -1,1 +1,0 @@
-Independent News station started in the early fourth era by the Harper family. The paragon of objective news and 
